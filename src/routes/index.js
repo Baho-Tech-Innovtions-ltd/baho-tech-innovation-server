@@ -1,0 +1,31 @@
+import { Router } from "express";
+import { contact } from "../controllers/contact.controller.js";
+import { adminRoutes } from "../modules/admin/admin.routes.js";
+import { accessibilityRoutes } from "../modules/accessibility/accessibility.routes.js";
+import { aiAssistantRoutes } from "../modules/ai-assistant/ai-assistant.routes.js";
+import { authRoutes } from "../modules/auth/auth.routes.js";
+import { disabilityRoutes } from "../modules/disability/disability.routes.js";
+import { signLanguageRoutes } from "../modules/sign-language/sign-language.routes.js";
+import { speechRoutes } from "../modules/speech/speech.routes.js";
+import { themeRoutes } from "../modules/theme/theme.routes.js";
+import { translationRoutes } from "../modules/translation/translation.routes.js";
+import { userRoutes } from "../modules/users/users.routes.js";
+import { visionRoutes } from "../modules/vision/vision.routes.js";
+import { writingRoutes } from "../modules/writing/writing.routes.js";
+
+export const apiRoutes = Router();
+
+apiRoutes.get("/health", (_req, res) => res.json({ ok: true }));
+apiRoutes.post("/contact", contact);
+apiRoutes.use("/auth", authRoutes);
+apiRoutes.use("/admin", adminRoutes);
+apiRoutes.use("/users", userRoutes);
+apiRoutes.use("/disability", disabilityRoutes);
+apiRoutes.use("/speech", speechRoutes);
+apiRoutes.use("/theme", themeRoutes);
+apiRoutes.use("/translation", translationRoutes);
+apiRoutes.use("/accessibility", accessibilityRoutes);
+apiRoutes.use("/ai-assistant", aiAssistantRoutes);
+apiRoutes.use("/writing", writingRoutes);
+apiRoutes.use("/vision", visionRoutes);
+apiRoutes.use("/sign-language", signLanguageRoutes);

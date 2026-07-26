@@ -1,0 +1,439 @@
+{
+  "info": {
+    "name": "Baho Tech API",
+    "description": "Auth, admin, user profile, and disability dashboard access endpoints for the Baho Tech platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3001/api"
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Grace User\",\n  \"email\": \"grace.user@example.com\",\n  \"password\": \"password123\",\n  \"confirmPassword\": \"password123\",\n  \"disabilityCategory\": \"blind\",\n  \"phone\": \"+250700000000\",\n  \"location\": \"Kigali\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('authToken', json.token);",
+                  "}",
+                  "if (json.user && json.user.id) {",
+                  "  pm.collectionVariables.set('userId', String(json.user.id));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"grace.user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Get user profile",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/profile"
+          }
+        },
+        {
+          "name": "Get dashboard access",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/users/dashboard-access"
+          }
+        },
+        {
+          "name": "Update preferences",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"preferredLanguage\": \"sw\",\n  \"preferredTheme\": \"dark\",\n  \"accessibilityPreferences\": {\n    \"voiceCommands\": true,\n    \"screenReaderHints\": true,\n    \"largeText\": false,\n    \"reduceMotion\": false\n  }\n}"
+            },
+            "url": "{{baseUrl}}/users/preferences"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get admin stats",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/stats"
+          }
+        },
+        {
+          "name": "Get all users",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users?search=&disability=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "disability",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get single user details",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Disability",
+      "item": [
+        {
+          "name": "Get disability categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/disability/categories"
+          }
+        },
+        {
+          "name": "Get my disability access",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/disability/access"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Speech",
+      "item": [
+        {
+          "name": "Get speech capabilities",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/speech/capabilities"
+          }
+        },
+        {
+          "name": "Transcribe audio with Gemini",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"audioBase64\": \"BASE64_AUDIO_HERE\",\n  \"mimeType\": \"audio/ogg\",\n  \"language\": \"en\"\n}"
+            },
+            "url": "{{baseUrl}}/speech/transcribe"
+          }
+        },
+        {
+          "name": "Optimize text for TTS",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"SBS setup info for tomorrow at 8am\",\n  \"language\": \"en\"\n}"
+            },
+            "url": "{{baseUrl}}/speech/optimize-tts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Gemini AI",
+      "item": [
+        {
+          "name": "Navigation help",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Help me use this page\",\n  \"language\": \"en\",\n  \"pageContext\": {\n    \"route\": \"/dashboard/blind\",\n    \"title\": \"Blind dashboard\",\n    \"sections\": [\"Smart Blind Stick\", \"Screen reader support\"],\n    \"buttons\": [\"Read page\", \"Analyze scene\"],\n    \"forms\": []\n  }\n}"
+            },
+            "url": "{{baseUrl}}/ai-assistant/navigation-help"
+          }
+        },
+        {
+          "name": "Screen reader summary",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"language\": \"en\",\n  \"pageContext\": {\n    \"route\": \"/dashboard/blind\",\n    \"title\": \"Blind dashboard\",\n    \"sections\": [\"Smart Blind Stick\"],\n    \"buttons\": [\"Request support\"],\n    \"forms\": []\n  }\n}"
+            },
+            "url": "{{baseUrl}}/ai-assistant/screen-reader"
+          }
+        },
+        {
+          "name": "Conversation",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"language\": \"en\",\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"What should I do next?\" }\n  ],\n  \"pageContext\": {\n    \"route\": \"/dashboard/mute\",\n    \"title\": \"Mute dashboard\",\n    \"sections\": [\"Text to speech\"],\n    \"buttons\": [\"Play\"],\n    \"forms\": []\n  }\n}"
+            },
+            "url": "{{baseUrl}}/ai-assistant/conversation"
+          }
+        },
+        {
+          "name": "Writing assist",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"input\": \"need help with appointment\",\n  \"mode\": \"expand\",\n  \"language\": \"en\"\n}" },
+            "url": "{{baseUrl}}/writing/assist"
+          }
+        },
+        {
+          "name": "Vision analysis",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"imageBase64\": \"BASE64_IMAGE_HERE\",\n  \"mimeType\": \"image/jpeg\",\n  \"task\": \"Describe the scene for a blind user\",\n  \"language\": \"en\"\n}" },
+            "url": "{{baseUrl}}/vision/analyze"
+          }
+        },
+        {
+          "name": "Sign-language gesture interpretation",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{authToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"imageBase64\": \"BASE64_IMAGE_HERE\",\n  \"mimeType\": \"image/jpeg\",\n  \"language\": \"en\"\n}" },
+            "url": "{{baseUrl}}/sign-language/interpret"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Preferences metadata",
+      "item": [
+        {
+          "name": "Get translation languages",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/translation/languages"
+          }
+        },
+        {
+          "name": "Get theme options",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/theme/options"
+          }
+        },
+        {
+          "name": "Get accessibility options",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/accessibility/options"
+          }
+        }
+      ]
+    }
+  ]
+}
