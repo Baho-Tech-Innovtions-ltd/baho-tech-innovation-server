@@ -48,3 +48,67 @@ export const env = {
     retryMaxDelayMs: numberFromEnv(process.env.GEMINI_RETRY_MAX_DELAY_MS, 8000),
   },
 };
+
+/**
+ * Validate critical environment variables
+ * Call this at server startup to fail fast on misconfiguration
+ */
+export function validateEnvironment() {
+  const errors = [];
+
+  // Critical requirements
+  if (!env.clientOrigins || env.clientOrigins.length === 0) {
+    errors.push("CLIENT_ORIGINS or CLIENT_ORIGIN must be set");
+  }
+
+  if (isProduction) {
+    // Production-specific validations
+    if (!env.admin.email || !env.admin.password) {
+      errors.push("ADMIN_EMAIL and ADMIN_PASSWORD must be set in production");
+    }
+
+    // Optional but recommended for production
+    if (!env.smtp.host || !env.smtp.user) {
+      console.warn("[WARNING] SMTP not configured - email features will not work");
+    }
+
+    if (!env.gemini.apiKey) {
+      console.warn("[WARNING] GEMINI_API_KEY not configured - AI features will not work");
+    }
+  }
+
+  if (errors.length > 0) {
+    console.error("[CONFIGURATION ERROR]");
+    errors.forEach((error) => console.error(`  - ${error}`));
+    process.exit(1);
+  }
+
+  // Log successful configuration
+  console.log("\n╔════════════════════════════════════════════════╗");
+  console.log("║     Baho Tech API - Configuration Status       ║");
+  console.log("╚════════════════════════════════════════════════╝\n");
+  
+  console.log("✅ Environment Configuration:");
+  console.log(`   Node Environment: ${env.nodeEnv.toUpperCase()}`);
+  console.log(`   Server URL: ${env.nodeEnv === 'production' ? env.nodeEnv === 'production' ? 'https://baho-tech-innovation-server-r3v4.onrender.com' : `http://${env.host}:${env.port}` : `http://${env.host}:${env.port}`}`);
+  console.log(`   API Base Path: /api`);
+  
+  console.log("\n✅ Frontend Origins (CORS Allowed):");
+  env.clientOrigins.forEach((origin) => {
+    console.log(`   - ${origin}`);
+  });
+
+  console.log("\n✅ Database:");
+  console.log("   Type: SQLite");
+  console.log("   Location: ./data/baho.sqlite");
+  
+  console.log("\n✅ Features:");
+  console.log(`   - Authentication: Enabled (Session TTL: ${env.sessionTtlDays} days)`);
+  console.log(`   - Rate Limiting: Enabled`);
+  console.log(`   - Security Headers: Enabled (Helmet.js)`);
+  console.log(`   - AI Assistant: ${env.gemini.apiKey ? "Enabled" : "Disabled (set GEMINI_API_KEY)"}`);
+  console.log(`   - Email Notifications: ${env.smtp.host ? "Enabled" : "Disabled (set SMTP_* variables)"}`);
+  
+  console.log("\n" + "═".repeat(50) + "\n");
+}
+
