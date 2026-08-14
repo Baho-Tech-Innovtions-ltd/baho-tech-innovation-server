@@ -1,7 +1,11 @@
+import { setDefaultResultOrder } from "dns";
 import pg from "pg";
 import { env } from "../config/env.js";
 import { schemaSql } from "./schema.js";
 import { ensureAdminUser } from "./seed.js";
+
+// Force IPv4 DNS resolution — Render free tier does not support IPv6 egress
+setDefaultResultOrder("ipv4first");
 
 let pool = null;
 
@@ -26,7 +30,7 @@ export async function initializeDatabase(db) {
     // Run schema creation
     await db.query(schemaSql);
     console.log("✅ Database schema initialized successfully");
-    
+
     // Seed admin user
     await ensureAdminUser(db);
     console.log("✅ Database seeding verified");
