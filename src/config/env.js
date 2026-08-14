@@ -21,6 +21,7 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: numberFromEnv(process.env.PORT, 3001),
   host: isProduction ? "" : process.env.HOST || "127.0.0.1",
+  databaseUrl: process.env.DATABASE_URL || "",
   clientOrigin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
   clientOrigins: csv(process.env.CLIENT_ORIGINS || process.env.CLIENT_ORIGIN || "http://localhost:5173,http://localhost:5174"),
   sessionTtlDays: numberFromEnv(process.env.SESSION_TTL_DAYS, 7),
@@ -57,6 +58,10 @@ export function validateEnvironment() {
   const errors = [];
 
   // Critical requirements
+  if (!env.databaseUrl) {
+    errors.push("DATABASE_URL must be set");
+  }
+
   if (!env.clientOrigins || env.clientOrigins.length === 0) {
     errors.push("CLIENT_ORIGINS or CLIENT_ORIGIN must be set");
   }
@@ -99,8 +104,7 @@ export function validateEnvironment() {
   });
 
   console.log("\n✅ Database:");
-  console.log("   Type: SQLite");
-  console.log("   Location: ./data/baho.sqlite");
+  console.log("   Type: PostgreSQL (Supabase)");
   
   console.log("\n✅ Features:");
   console.log(`   - Authentication: Enabled (Session TTL: ${env.sessionTtlDays} days)`);

@@ -1,46 +1,37 @@
-import Database from "better-sqlite3";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import pg from "pg";
+import { env } from "../config/env.js";
 import { schemaSql } from "./schema.js";
+import { ensureAdminUser } from "./seed.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const dataDir = path.resolve(__dirname, "../../data");
-const dbPath = path.join(dataDir, "baho.sqlite");
-
-let db = null;
+let pool = null;
 
 export function connectDatabase() {
-  if (db) return db;
+  if (pool) return pool;
 
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
+  pool = new pg.Pool({
+    connectionString: env.databaseUrl,
+    ssl: env.nodeEnv === "production" ? { rejectUnauthorized: false } : false,
+  });
 
-  db = new Database(dbPath);
-  db.pragma("foreign_keys = ON");
-  db.exec(schemaSql);
-  ensureUserPreferenceColumns(db);
-  return db;
+  return pool;
 }
 
 export function getDatabase() {
-  if (!db) return connectDatabase();
-  return db;
+  if (!pool) return connectDatabase();
+  return pool;
 }
 
-function ensureUserPreferenceColumns(database) {
-  const columns = database.prepare("PRAGMA table_info(users)").all().map((column) => column.name);
-  const migrations = [
-    ["preferred_language", "ALTER TABLE users ADD COLUMN preferred_language TEXT NOT NULL DEFAULT 'en'"],
-    ["preferred_theme", "ALTER TABLE users ADD COLUMN preferred_theme TEXT NOT NULL DEFAULT 'light'"],
-    ["accessibility_preferences", "ALTER TABLE users ADD COLUMN accessibility_preferences TEXT NOT NULL DEFAULT '{}'"],
-  ];
-
-  for (const [column, sql] of migrations) {
-    if (!columns.includes(column)) {
-      database.prepare(sql).run();
-    }
+export async function initializeDatabase(db) {
+  try {
+    // Run schema creation
+    await db.query(schemaSql);
+    console.log("✅ Database schema initialized successfully");
+    
+    // Seed admin user
+    await ensureAdminUser(db);
+    console.log("✅ Database seeding verified");
+  } catch (error) {
+    console.error("❌ Failed to initialize database:", error);
+    throw error;
   }
 }

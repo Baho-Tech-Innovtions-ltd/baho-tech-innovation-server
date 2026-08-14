@@ -10,15 +10,16 @@ import {
   findUserByEmail,
 } from "./auth.repository.js";
 
-export function registerUser(payload) {
-  if (findUserByEmail(payload.email)) {
+export async function registerUser(payload) {
+  const existing = await findUserByEmail(payload.email);
+  if (existing) {
     const error = new Error("An account already exists for this email.");
     error.status = 409;
     throw error;
   }
 
   const { hash, salt } = hashPassword(payload.password);
-  const user = createUser({
+  const user = await createUser({
     fullName: payload.fullName,
     email: payload.email,
     passwordHash: hash,
@@ -34,7 +35,7 @@ export function registerUser(payload) {
 }
 
 export async function registerUserWithEmail(payload) {
-  const user = registerUser(payload);
+  const user = await registerUser(payload);
 
   try {
     const email = await sendWelcomeEmail(user);
@@ -50,8 +51,8 @@ export async function registerUserWithEmail(payload) {
   }
 }
 
-export function loginUser({ email, password }) {
-  const user = findUserByEmail(email);
+export async function loginUser({ email, password }) {
+  const user = await findUserByEmail(email);
 
   if (!user || !verifyPassword(password, user)) {
     const error = new Error("Invalid email or password.");
@@ -61,11 +62,11 @@ export function loginUser({ email, password }) {
 
   const token = createRawToken();
   const expiresAt = new Date(Date.now() + env.sessionTtlDays * 24 * 60 * 60 * 1000).toISOString();
-  createSession({ userId: user.id, tokenHash: hashToken(token), expiresAt });
+  await createSession({ userId: user.id, tokenHash: hashToken(token), expiresAt });
 
   return { token, user: toPublicUser(user) };
 }
 
-export function logoutSession(sessionId) {
-  deleteSessionById(sessionId);
+export async function logoutSession(sessionId) {
+  await deleteSessionById(sessionId);
 }

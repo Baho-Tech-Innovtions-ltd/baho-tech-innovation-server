@@ -19,12 +19,12 @@ export async function register(req, res, next) {
   }
 }
 
-export function login(req, res, next) {
+export async function login(req, res, next) {
   try {
     const { error, value } = validateLoginPayload(req.body);
     if (error) return res.status(400).json({ ok: false, error });
 
-    const result = loginUser(value);
+    const result = await loginUser(value);
     return res.json({ ok: true, ...result });
   } catch (error) {
     return next(error);
@@ -35,9 +35,9 @@ export function me(req, res) {
   return res.json({ ok: true, user: toPublicUser(req.user) });
 }
 
-export function logout(req, res, next) {
+export async function logout(req, res, next) {
   try {
-    logoutSession(req.sessionId);
+    await logoutSession(req.sessionId);
     return res.json({ ok: true });
   } catch (error) {
     return next(error);

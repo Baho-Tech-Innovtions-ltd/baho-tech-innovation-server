@@ -1,13 +1,6 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import { env } from "../config/env.js";
 import { getDatabase } from "../database/connection.js";
 import { createTransporter } from "./mail.service.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const fallbackPath = path.resolve(__dirname, "../data/messages.json");
 
 export async function submitContactMessage({ name, email, subject, message }) {
   if (!name || !email || !subject || !message) {
@@ -18,10 +11,13 @@ export async function submitContactMessage({ name, email, subject, message }) {
 
   const createdAt = new Date().toISOString();
   const db = getDatabase();
-  const info = db
-    .prepare("INSERT INTO messages (name, email, subject, message, created_at) VALUES (?, ?, ?, ?, ?)")
-    .run(name, email, subject, message, createdAt);
-  const messageId = Number(info.lastInsertRowid);
+
+  const result = await db.query(
+    "INSERT INTO messages (name, email, subject, message, created_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+    [name, email, subject, message, createdAt]
+  );
+  const messageId = result.rows[0].id;
+
   const transporter = createTransporter();
 
   if (!transporter) {
@@ -45,10 +41,4 @@ export async function submitContactMessage({ name, email, subject, message }) {
   });
 
   return { ok: true, status: 200, payload: { ok: true, messageId } };
-}
-
-export function saveFallbackMessage(message) {
-  const existing = fs.existsSync(fallbackPath) ? JSON.parse(fs.readFileSync(fallbackPath, "utf8")) : [];
-  existing.push(message);
-  fs.writeFileSync(fallbackPath, JSON.stringify(existing, null, 2));
 }

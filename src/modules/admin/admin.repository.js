@@ -1,65 +1,68 @@
 import { getDatabase } from "../../database/connection.js";
 import { normalizeDisabilityCategory } from "../../utils/normalizers.js";
 
-export function countUsers() {
-  return getDatabase().prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'user'").get().count;
+export async function countUsers() {
+  const result = await getDatabase().query("SELECT COUNT(*)::int AS count FROM users WHERE role = 'user'");
+  return result.rows[0].count;
 }
 
-export function countUsersByDisability() {
-  return getDatabase()
-    .prepare(
-      `SELECT disability_category AS category, COUNT(*) AS count
-       FROM users
-       WHERE role = 'user'
-       GROUP BY disability_category`
-    )
-    .all();
+export async function countUsersByDisability() {
+  const result = await getDatabase().query(
+    `SELECT disability_category AS category, COUNT(*)::int AS count
+     FROM users
+     WHERE role = 'user'
+     GROUP BY disability_category`
+  );
+  return result.rows;
 }
 
-export function findRecentUsers(limit = 6) {
-  return getDatabase()
-    .prepare(
-      `SELECT id, full_name, email, role, disability_category, phone, location, created_at, updated_at
-       FROM users
-       WHERE role = 'user'
-       ORDER BY datetime(created_at) DESC
-       LIMIT ?`
-    )
-    .all(limit);
+export async function findRecentUsers(limit = 6) {
+  const result = await getDatabase().query(
+    `SELECT id, full_name, email, role, disability_category, phone, location, created_at, updated_at
+     FROM users
+     WHERE role = 'user'
+     ORDER BY created_at DESC
+     LIMIT $1`,
+    [limit]
+  );
+  return result.rows;
 }
 
-export function findUsers({ search = "", disability = "" } = {}) {
+export async function findUsers({ search = "", disability = "" } = {}) {
   const values = [];
   const conditions = ["role = 'user'"];
   const category = normalizeDisabilityCategory(disability);
   const normalizedSearch = String(search || "").trim().toLowerCase();
+  let paramIndex = 1;
 
   if (normalizedSearch) {
-    conditions.push("(LOWER(full_name) LIKE ? OR LOWER(email) LIKE ?)");
+    conditions.push(`(LOWER(full_name) LIKE $${paramIndex} OR LOWER(email) LIKE $${paramIndex + 1})`);
     values.push(`%${normalizedSearch}%`, `%${normalizedSearch}%`);
+    paramIndex += 2;
   }
 
   if (category) {
-    conditions.push("disability_category = ?");
+    conditions.push(`disability_category = $${paramIndex}`);
     values.push(category);
+    paramIndex += 1;
   }
 
-  return getDatabase()
-    .prepare(
-      `SELECT id, full_name, email, role, disability_category, preferred_language, preferred_theme, accessibility_preferences, phone, location, created_at, updated_at
-       FROM users
-       WHERE ${conditions.join(" AND ")}
-       ORDER BY datetime(created_at) DESC`
-    )
-    .all(...values);
+  const result = await getDatabase().query(
+    `SELECT id, full_name, email, role, disability_category, preferred_language, preferred_theme, accessibility_preferences, phone, location, created_at, updated_at
+     FROM users
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY created_at DESC`,
+    values
+  );
+  return result.rows;
 }
 
-export function findUserDetails(id) {
-  return getDatabase()
-    .prepare(
-      `SELECT id, full_name, email, role, disability_category, preferred_language, preferred_theme, accessibility_preferences, phone, location, created_at, updated_at
-       FROM users
-       WHERE id = ?`
-    )
-    .get(id);
+export async function findUserDetails(id) {
+  const result = await getDatabase().query(
+    `SELECT id, full_name, email, role, disability_category, preferred_language, preferred_theme, accessibility_preferences, phone, location, created_at, updated_at
+     FROM users
+     WHERE id = $1`,
+    [id]
+  );
+  return result.rows[0];
 }

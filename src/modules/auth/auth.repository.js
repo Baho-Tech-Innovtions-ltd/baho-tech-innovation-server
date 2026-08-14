@@ -1,15 +1,17 @@
 import { getDatabase } from "../../database/connection.js";
 import { normalizeEmail } from "../../utils/normalizers.js";
 
-export function findUserByEmail(email) {
-  return getDatabase().prepare("SELECT * FROM users WHERE email = ?").get(normalizeEmail(email));
+export async function findUserByEmail(email) {
+  const result = await getDatabase().query("SELECT * FROM users WHERE email = $1", [normalizeEmail(email)]);
+  return result.rows[0];
 }
 
-export function findUserById(id) {
-  return getDatabase().prepare("SELECT * FROM users WHERE id = ?").get(id);
+export async function findUserById(id) {
+  const result = await getDatabase().query("SELECT * FROM users WHERE id = $1", [id]);
+  return result.rows[0];
 }
 
-export function createUser({
+export async function createUser({
   fullName,
   email,
   passwordHash,
@@ -21,13 +23,12 @@ export function createUser({
   location,
 }) {
   const now = new Date().toISOString();
-  const result = getDatabase()
-    .prepare(
-      `INSERT INTO users
-        (full_name, email, password_hash, password_salt, role, disability_category, preferred_language, preferred_theme, phone, location, created_at, updated_at)
-       VALUES (?, ?, ?, ?, 'user', ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .run(
+  const result = await getDatabase().query(
+    `INSERT INTO users
+      (full_name, email, password_hash, password_salt, role, disability_category, preferred_language, preferred_theme, phone, location, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, 'user', $5, $6, $7, $8, $9, $10, $11)
+     RETURNING *`,
+    [
       fullName,
       normalizeEmail(email),
       passwordHash,
@@ -38,34 +39,36 @@ export function createUser({
       phone,
       location,
       now,
-      now
-    );
+      now,
+    ]
+  );
 
-  return findUserById(result.lastInsertRowid);
+  return result.rows[0];
 }
 
-export function createSession({ userId, tokenHash, expiresAt }) {
+export async function createSession({ userId, tokenHash, expiresAt }) {
   const now = new Date().toISOString();
-  getDatabase()
-    .prepare("INSERT INTO sessions (user_id, token_hash, created_at, expires_at) VALUES (?, ?, ?, ?)")
-    .run(userId, tokenHash, now, expiresAt);
+  await getDatabase().query(
+    "INSERT INTO sessions (user_id, token_hash, created_at, expires_at) VALUES ($1, $2, $3, $4)",
+    [userId, tokenHash, now, expiresAt]
+  );
 }
 
-export function deleteSessionById(sessionId) {
-  getDatabase().prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
+export async function deleteSessionById(sessionId) {
+  await getDatabase().query("DELETE FROM sessions WHERE id = $1", [sessionId]);
 }
 
-export function deleteExpiredSessions() {
-  getDatabase().prepare("DELETE FROM sessions WHERE expires_at <= ?").run(new Date().toISOString());
+export async function deleteExpiredSessions() {
+  await getDatabase().query("DELETE FROM sessions WHERE expires_at <= $1", [new Date().toISOString()]);
 }
 
-export function findActiveSessionByTokenHash(tokenHash) {
-  return getDatabase()
-    .prepare(
-      `SELECT sessions.id AS session_id, sessions.expires_at, users.*
-       FROM sessions
-       JOIN users ON users.id = sessions.user_id
-       WHERE sessions.token_hash = ? AND sessions.expires_at > ?`
-    )
-    .get(tokenHash, new Date().toISOString());
+export async function findActiveSessionByTokenHash(tokenHash) {
+  const result = await getDatabase().query(
+    `SELECT sessions.id AS session_id, sessions.expires_at, users.*
+     FROM sessions
+     JOIN users ON users.id = sessions.user_id
+     WHERE sessions.token_hash = $1 AND sessions.expires_at > $2`,
+    [tokenHash, new Date().toISOString()]
+  );
+  return result.rows[0];
 }

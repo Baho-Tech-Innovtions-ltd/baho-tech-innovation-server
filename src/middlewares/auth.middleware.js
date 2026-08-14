@@ -2,7 +2,7 @@ import { USER_ROLES } from "../models/user.model.js";
 import { findActiveSessionByTokenHash, deleteExpiredSessions } from "../modules/auth/auth.repository.js";
 import { hashToken } from "../utils/token.js";
 
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
 
@@ -10,16 +10,20 @@ export function requireAuth(req, res, next) {
     return res.status(401).json({ ok: false, error: "Authentication is required." });
   }
 
-  deleteExpiredSessions();
-  const session = findActiveSessionByTokenHash(hashToken(token));
+  try {
+    await deleteExpiredSessions();
+    const session = await findActiveSessionByTokenHash(hashToken(token));
 
-  if (!session) {
-    return res.status(401).json({ ok: false, error: "Your session has expired. Please log in again." });
+    if (!session) {
+      return res.status(401).json({ ok: false, error: "Your session has expired. Please log in again." });
+    }
+
+    req.sessionId = session.session_id;
+    req.user = session;
+    return next();
+  } catch (error) {
+    return next(error);
   }
-
-  req.sessionId = session.session_id;
-  req.user = session;
-  return next();
 }
 
 export function requireAdmin(req, res, next) {
