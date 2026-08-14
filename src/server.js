@@ -1,4 +1,4 @@
-import { env, validateEnvironment } from "./config/env.js";
+ import { env, validateEnvironment } from "./config/env.js";
 import { createApp } from "./app.js";
 import { connectDatabase } from "./database/connection.js";
 import { ensureAdminUser } from "./database/seed.js";
