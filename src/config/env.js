@@ -22,7 +22,7 @@ const geminiModels = csv(process.env.GEMINI_MODELS || process.env.GEMINI_MODEL |
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: numberFromEnv(process.env.PORT, 3001),
-  host: isProduction ? "" : process.env.HOST || "127.0.0.1",
+  host: process.env.HOST || "0.0.0.0",
   serverUrl: process.env.SERVER_URL || "",
   mongoUri: process.env.MONGODB_URI || "",
   clientOrigin: process.env.CLIENT_ORIGIN || "http://localhost:5173",

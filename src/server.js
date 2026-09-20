@@ -8,16 +8,14 @@ validateEnvironment();
 // Create Express app
 const app = createApp();
 
-const baseUrl = env.serverUrl || (env.host ? `http://${env.host}:${env.port}` : `http://localhost:${env.port}`);
+const baseUrl = env.serverUrl || `http://${env.host}:${env.port}`;
 
 async function startServer() {
   // Connect to MongoDB, build indexes, and ensure the admin seed
   await initializeDatabase();
 
-  // Start listening
-  const server = env.host
-    ? app.listen(env.port, env.host, onListening)
-    : app.listen(env.port, onListening);
+  // Start listening (host is always set: "0.0.0.0" unless HOST is provided)
+  const server = app.listen(env.port, env.host, onListening);
 
   function onListening() {
     console.log(`✅ Baho Tech API running on ${baseUrl}`);
